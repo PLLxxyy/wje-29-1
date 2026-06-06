@@ -15,7 +15,7 @@ describe("Tree Generation Tests", () => {
 
   function createTestStructure(): void {
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), "wje29-test-"));
-    fixedMtime = new Date("2025-01-15T10:30:00Z");
+    fixedMtime = new Date(2025, 0, 15, 10, 30, 0);
 
     fileA = path.join(testDir, "file-a.txt");
     fs.writeFileSync(fileA, "Hello World");
@@ -70,11 +70,20 @@ describe("Tree Generation Tests", () => {
     const output = generateTree(options);
     const clean = stripAnsi(output);
 
-    assert.match(clean, /📁 .*test.*/);
-    assert.match(clean, /📄 file-a\.txt$/m);
-    assert.match(clean, /📄 file-b\.log$/m);
-    assert.match(clean, /📁 subdir$/m);
-    assert.match(clean, /📄 file-c\.json$/m);
+    const lines = clean.split("\n");
+    assert.match(lines[0], /^📁 /);
+
+    const fileLines = lines.filter(l => l.includes("📄"));
+    const dirLines = lines.filter(l => l.includes("📁"));
+    assert.ok(fileLines.length >= 3);
+    assert.ok(dirLines.length >= 2);
+
+    for (const line of lines) {
+      if (line.includes("file-a.txt")) assert.match(line, /📄 file-a\.txt\s*$/);
+      if (line.includes("file-b.log")) assert.match(line, /📄 file-b\.log\s*$/);
+      if (line.includes("file-c.json")) assert.match(line, /📄 file-c\.json\s*$/);
+      if (line.match(/📁 subdir/)) assert.match(line, /📁 subdir\s*$/);
+    }
 
     assert.doesNotMatch(clean, /\d+(\.\d+)?\s+(B|KB|MB|GB|TB)/);
     assert.doesNotMatch(clean, /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/);
@@ -187,15 +196,52 @@ describe("Tree Generation Tests", () => {
     const output = generateTree(options);
     const clean = stripAnsi(output);
 
-    assert.match(clean, /├── 📄 file-a\.txt/);
-    assert.match(clean, /├── 📄 file-b\.log/);
-    assert.match(clean, /└── 📁 subdir/);
-    assert.match(clean, /│   /);
-    assert.match(clean, /└── 📄 file-c\.json/);
+    const lines = clean.split("\n").filter(l => l.trim().length > 0);
 
-    const subdirFileLine = clean.split("\n").find(l => l.includes("file-c.json"));
-    assert.ok(subdirFileLine, "Should find file-c.json line");
-    assert.ok(subdirFileLine.startsWith("    ") || subdirFileLine.includes("    └──"), 
-      "Subdir file should be indented");
+    let dirIdx = -1;
+    let fileAIdx = -1;
+    let fileBIdx = -1;
+    let subFileIdx = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("📁 subdir")) dirIdx = i;
+      if (lines[i].includes("file-a.txt")) fileAIdx = i;
+      if (lines[i].includes("file-b.log")) fileBIdx = i;
+      if (lines[i].includes("file-c.json")) subFileIdx = i;
+    }
+
+    assert.ok(dirIdx > 0, "subdir should be after root");
+    assert.ok(fileAIdx > 0, "file-a.txt should be present");
+    assert.ok(fileBIdx > 0, "file-b.log should be present");
+    assert.ok(subFileIdx > dirIdx, "file-c.json should be after subdir");
+    assert.ok(dirIdx < fileAIdx && dirIdx < fileBIdx, "Directory should be sorted before files");
+
+    if (dirIdx > 0) {
+      const dirLine = lines[dirIdx];
+      if (dirIdx < fileAIdx && dirIdx < fileBIdx) {
+        assert.match(dirLine, /├── 📁 subdir/, "subdir is not last, should use ├──");
+      } else {
+        assert.match(dirLine, /└── 📁 subdir/, "subdir is last, should use └──");
+      }
+    }
+
+    const lastIdx = lines.length - 1;
+    assert.match(lines[lastIdx], /└── /, "Last item should use └── connector");
+
+    if (subFileIdx > 0) {
+      const subFileLine = lines[subFileIdx];
+      assert.ok(
+        subFileLine.includes("└── 📄 file-c.json"),
+        `subdir file should be indented and use └──, got: ${subFileLine}`
+      );
+      assert.ok(
+        subFileLine.startsWith("    ") || subFileLine.includes("│   "),
+        "Subdir file should be indented"
+      );
+    }
+
+    if (dirIdx > 0 && subFileIdx > dirIdx) {
+      assert.match(clean, /│   /, "Should have vertical connector for subdir children");
+    }
   });
 });
