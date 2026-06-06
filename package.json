@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node bin/cli.ts",
-    "start": "node bin/cli.js"
+    "start": "node bin/cli.js",
+    "test": "node --test --require ts-node/register test/**/*.test.ts"
   },
   "keywords": [
     "cli",

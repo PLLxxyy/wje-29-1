@@ -16,7 +16,8 @@
   },
   "include": [
     "bin/**/*",
-    "src/**/*"
+    "src/**/*",
+    "test/**/*"
   ],
   "exclude": [
     "node_modules",
