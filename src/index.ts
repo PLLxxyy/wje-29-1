@@ -11,6 +11,32 @@ const LAST_BRANCH = "└── ";
 const VERTICAL = "│   ";
 const EMPTY = "    ";
 
+function formatSize(bytes?: number): string {
+  if (bytes === undefined) return "";
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(i > 0 ? 1 : 0)} ${sizes[i]}`;
+}
+
+function formatTime(date?: Date): string {
+  if (!date) return "";
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function buildNodeSuffix(node: TreeNode, options: TreeOptions): string {
+  const parts: string[] = [];
+  if (options.showSize === true && node.size !== undefined) {
+    parts.push(chalk.gray(formatSize(node.size)));
+  }
+  if (options.showTime === true && node.mtime) {
+    parts.push(chalk.gray(formatTime(node.mtime)));
+  }
+  return parts.length > 0 ? `  ${parts.join("  ")}` : "";
+}
+
 function renderNode(
   node: TreeNode,
   context: RenderContext,
@@ -19,7 +45,8 @@ function renderNode(
   const lines: string[] = [];
   const icon = node.isDirectory ? FOLDER_ICON : FILE_ICON;
   const connector = context.isLast ? LAST_BRANCH : BRANCH;
-  const line = `${context.prefix}${connector}${icon} ${node.name}`;
+  const suffix = buildNodeSuffix(node, options);
+  const line = `${context.prefix}${connector}${icon} ${node.name}${suffix}`;
   lines.push(line);
 
   if (node.children.length > 0 || node.truncated > 0) {
@@ -45,7 +72,8 @@ function renderNode(
 export function renderTree(node: TreeNode, options: TreeOptions): string {
   const lines: string[] = [];
   const icon = node.isDirectory ? FOLDER_ICON : FILE_ICON;
-  lines.push(`${icon} ${node.name}`);
+  const suffix = buildNodeSuffix(node, options);
+  lines.push(`${icon} ${node.name}${suffix}`);
 
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i];

@@ -47,6 +47,8 @@ export function buildTree(
       isDirectory: false,
       children: [],
       truncated: 0,
+      size: stats.size,
+      mtime: stats.mtime,
     };
   }
 
@@ -55,6 +57,8 @@ export function buildTree(
     isDirectory: true,
     children: [],
     truncated: 0,
+    size: stats.size,
+    mtime: stats.mtime,
   };
 
   if (currentDepth >= options.maxDepth) {
@@ -68,7 +72,7 @@ export function buildTree(
     return node;
   }
 
-  const filtered: { name: string; fullPath: string; isDir: boolean }[] = [];
+  const filtered: { name: string; fullPath: string; isDir: boolean; stat: fs.Stats }[] = [];
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry);
     if (shouldExclude(entry, fullPath, options)) continue;
@@ -86,6 +90,7 @@ export function buildTree(
       name: entry,
       fullPath,
       isDir: entryStat.isDirectory(),
+      stat: entryStat,
     });
   }
 
@@ -110,6 +115,8 @@ export function buildTree(
         isDirectory: false,
         children: [],
         truncated: 0,
+        size: item.stat.size,
+        mtime: item.stat.mtime,
       });
     }
   }

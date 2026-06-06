@@ -11,6 +11,10 @@ export interface TreeOptions {
   output?: string;
   /** Target directory to visualize */
   targetDir: string;
+  /** Show file size */
+  showSize?: boolean;
+  /** Show file modification time */
+  showTime?: boolean;
 }
 
 export interface TreeNode {
@@ -18,6 +22,8 @@ export interface TreeNode {
   isDirectory: boolean;
   children: TreeNode[];
   truncated: number;
+  size?: number;
+  mtime?: Date;
 }
 
 export interface RenderContext {

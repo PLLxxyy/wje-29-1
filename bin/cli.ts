@@ -20,6 +20,8 @@ program
   )
   .option("-m, --max-files <number>", "Max items per directory before truncating", "50")
   .option("-o, --output <file>", "Save output to file instead of stdout")
+  .option("-s, --size", "Show file size", false)
+  .option("-t, --time", "Show file modification time", false)
   .action((directory: string, options: Record<string, any>) => {
     const targetDir = path.resolve(directory);
 
@@ -48,6 +50,8 @@ program
       exclude: options.exclude ?? [],
       maxFiles,
       output: options.output,
+      showSize: options.size ?? false,
+      showTime: options.time ?? false,
     };
 
     try {
